@@ -75,6 +75,23 @@ async def root():
     }
 
 
+@app.get("/health")
+async def health_check():
+    """Health check endpoint for Docker"""
+    try:
+        # Simple check if AI engine is loaded (optional, keep it fast)
+        ai_status = "active" if config.ENABLE_AI else "disabled"
+        return {
+            "status": "healthy",
+            "ai_engine": ai_status,
+            "version": config.APP_VERSION
+        }
+    except Exception as e:
+        log.error(f"Health check failed: {e}")
+        return JSONResponse(status_code=500, content={"status": "unhealthy", "error": str(e)})
+
+
+
 @app.get("/api/status", response_model=SystemStatus)
 async def get_status():
     """Get system status"""
