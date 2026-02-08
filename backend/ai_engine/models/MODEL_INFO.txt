@@ -1,0 +1,20 @@
+Smart Rescuer - AI Model
+==================================================
+
+Model Type: Lightweight CNN
+Framework: TensorFlow Lite
+Input Shape: (224, 224, 3)
+Output Classes: 7
+Model Size: 0.22 MB
+
+Classes:
+  0: no_injury
+  1: bleeding
+  2: bruise
+  3: burn
+  4: cut
+  5: fracture
+  6: swelling
+
+Note: This is a lightweight model.
+The model works 100% OFFLINE.

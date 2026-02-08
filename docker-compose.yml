@@ -1,0 +1,88 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: smart-rescuer-backend
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      - DEBUG=False
+      - API_HOST=0.0.0.0
+      - API_PORT=8000
+      - ENABLE_AI=True
+      - AI_MODEL_PATH=/app/ai_engine/models
+      - ENABLE_ECG=False
+      - ENABLE_SPO2=False
+      - ENABLE_TEMP=False
+      - ENABLE_GPS=False
+      - WORKERS=4
+      - PYTHONUNBUFFERED=1
+    volumes:
+      - ./backend/reports:/app/reports
+      - ./backend/uploads:/app/uploads
+      - ./backend/ai_engine:/app/ai_engine
+    networks:
+      - smart-rescuer-net
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8000/health" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        - VITE_API_URL=http://76.13.40.84:8000
+    container_name: smart-rescuer-frontend
+    restart: unless-stopped
+    ports:
+      - "3000:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks:
+      - smart-rescuer-net
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:80" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  nginx:
+    image: nginx:alpine
+    container_name: smart-rescuer-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/ssl:/etc/nginx/ssl:ro
+      - ./certbot/conf:/etc/letsencrypt:ro
+      - ./certbot/www:/var/www/certbot:ro
+    depends_on:
+      - backend
+      - frontend
+    networks:
+      - smart-rescuer-net
+
+  certbot:
+    image: certbot/certbot
+    container_name: smart-rescuer-certbot
+    volumes:
+      - ./certbot/conf:/etc/letsencrypt
+      - ./certbot/www:/var/www/certbot
+    command: certonly --webroot --webroot-path=/var/www/certbot --email your-email@example.com --agree-tos --no-eff-email -d yourdomain.com -d www.yourdomain.com
+    profiles:
+      - ssl
+
+networks:
+  smart-rescuer-net:
+    driver: bridge

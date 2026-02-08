@@ -1,0 +1,7 @@
+no_injury
+bleeding
+bruise
+burn
+cut
+fracture
+swelling
